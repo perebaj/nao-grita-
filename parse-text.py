@@ -26,7 +26,7 @@ class Influencer(BaseModel):
     advice_description: str
 
 # Specify the file path
-FILE_PATH = "influencers-parsed.json"
+FILE_PATH = "data/influencers-parsed.json"
 
 
 def parse_influencers():
@@ -61,10 +61,10 @@ def parse_influencers():
                     exceptions.append(row)
 
     # save in json file
-    with open("influencers.json", "w", encoding="utf-8") as file:
+    with open("data/influencers.json", "w", encoding="utf-8") as file:
         json.dump([influencer.dict() for influencer in influencers], file, indent=4, ensure_ascii=False)
 
-    with open("exceptions.json", "w", encoding="utf-8") as file:
+    with open("data/exceptions.json", "w", encoding="utf-8") as file:
         json.dump(exceptions, file, indent=4, ensure_ascii=False)
 
 
@@ -72,7 +72,7 @@ def parse_exception():
     """It only change the order of the fields that will be encoded in the json file.
     """
     # Read the JSON file
-    with open("exceptions.json", "r", encoding="utf-8") as file:
+    with open("data/exceptions.json", "r", encoding="utf-8") as file:
         data = json.load(file)
 
     exceptions_influencers = []
@@ -95,7 +95,7 @@ def parse_exception():
 
 
     # save in json file
-    with open("exceptions-influencers.json", "w", encoding="utf-8") as file:
+    with open("data/exceptions-influencers.json", "w", encoding="utf-8") as file:
         json.dump([influencer.dict() for influencer in exceptions_influencers], file, indent=4, ensure_ascii=False)
 
 
@@ -104,7 +104,7 @@ def replace_idint_byuuid():
     """It only change the order of the fields that will be encoded in the json file.
     """
     # Read the JSON file
-    with open("influencers.json", "r", encoding="utf-8") as file:
+    with open("data/influencers.json", "r", encoding="utf-8") as file:
         data = json.load(file)
 
     influencers = []
@@ -124,7 +124,7 @@ def replace_idint_byuuid():
         influencers.append(i)
 
     # save in json file
-    with open("influencers-finisheds.json", "w", encoding="utf-8") as file:
+    with open("data/influencers-finisheds.json", "w", encoding="utf-8") as file:
         json.dump(influencers, file, indent=4, ensure_ascii=False)
 
 replace_idint_byuuid()
