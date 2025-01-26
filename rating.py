@@ -55,6 +55,7 @@ def calculate_rating(data: dict) -> float:
     with open("data/influencers_enriched3.json", "w", encoding="utf-8") as file:
         json.dump(data, file, ensure_ascii=False, indent=2)
 
+
 with open("data/influencers_enriched2.json", "r", encoding="utf-8") as file:
     data = json.load(file)
 
