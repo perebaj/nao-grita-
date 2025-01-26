@@ -1,6 +1,8 @@
 import json
-from pydantic import BaseModel
 import uuid
+
+from pydantic import BaseModel
+
 
 class Influencer(BaseModel):
     """
@@ -16,6 +18,7 @@ class Influencer(BaseModel):
         work_description (str): The description of the influencer's work.
         advice_description (str): An advice to work with the influencer.
     """
+
     id: str
     date: str
     name: str
@@ -24,6 +27,7 @@ class Influencer(BaseModel):
     when_worked: str
     work_description: str
     advice_description: str
+
 
 # Specify the file path
 FILE_PATH = "data/influencers-parsed.json"
@@ -52,7 +56,7 @@ def parse_influencers():
                         rate=row[4],
                         when_worked=row[5],
                         work_description=row[6],
-                        advice_description=row[7]
+                        advice_description=row[7],
                     )
                     influencers.append(influencer)
                 except Exception as e:
@@ -69,8 +73,7 @@ def parse_influencers():
 
 
 def parse_exception():
-    """It only change the order of the fields that will be encoded in the json file.
-    """
+    """It only change the order of the fields that will be encoded in the json file."""
     # Read the JSON file
     with open("data/exceptions.json", "r", encoding="utf-8") as file:
         data = json.load(file)
@@ -79,30 +82,27 @@ def parse_exception():
     for row_num, row in enumerate(data):
         try:
             influencer = Influencer(
-                date = row[0],
-                name = row[1],
-                nickname = row[2],
-                rate = row[3],
-                when_worked = row[4],
-                work_description = row[5],
-                advice_description = row[6],
-                id = uuid.uuid4().int
+                date=row[0],
+                name=row[1],
+                nickname=row[2],
+                rate=row[3],
+                when_worked=row[4],
+                work_description=row[5],
+                advice_description=row[6],
+                id=uuid.uuid4().int,
             )
             exceptions_influencers.append(influencer)
         except Exception as e:
             print(e)
             print(f"Row number: {row_num}. Data: {row}")
 
-
     # save in json file
     with open("data/exceptions-influencers.json", "w", encoding="utf-8") as file:
         json.dump([influencer.dict() for influencer in exceptions_influencers], file, indent=4, ensure_ascii=False)
 
 
-
 def replace_idint_byuuid():
-    """It only change the order of the fields that will be encoded in the json file.
-    """
+    """It only change the order of the fields that will be encoded in the json file."""
     # Read the JSON file
     with open("data/influencers.json", "r", encoding="utf-8") as file:
         data = json.load(file)
@@ -126,5 +126,6 @@ def replace_idint_byuuid():
     # save in json file
     with open("data/influencers-finisheds.json", "w", encoding="utf-8") as file:
         json.dump(influencers, file, indent=4, ensure_ascii=False)
+
 
 replace_idint_byuuid()
