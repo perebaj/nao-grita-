@@ -16,6 +16,8 @@ mypy = "^1.14.1"
 pytest = "^8.3.4"
 pydantic = "^2.10.6"
 scikit-learn = "^1.6.1"
+transformers = "^4.48.1"
+torch = "^2.5.1"
 
 
 [build-system]

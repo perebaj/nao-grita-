@@ -1,7 +1,6 @@
 import json
 import os
 
-import openai
 from llama_index.core.llms import ChatMessage
 from llama_index.llms.openai import OpenAI
 from pydantic import BaseModel
@@ -37,28 +36,30 @@ class InfluerEnriched(BaseModel):
 
 def main():
     """main"""
-    llm = OpenAI(model="gpt-4o-mini", api_key=_OPEN_AI_API_KEY)
+    llm = OpenAI(model="gpt-3.5-turbo", api_key=_OPEN_AI_API_KEY)
     # I want to create a prompt that given a text will return a sentiment analysis
 
     # Prompt
     prompt = """
-    Classifique o texto em very positive, positive, neutral, negative very negative. Também retorne um score associado a essa análise onde.
-    0.5000 a 1 very positive
-    0.1000 a 0.5000 positivo
-    -0.1000 a 0.1000 neutral
-    -0.1000 a -0.5000 negativo
-    -0.5000 a -1 muito negativo
+    Classifique o texto em uma das seguintes categorias de sentimento: very positive, positive, neutral, negative, ou very negative. Além disso, forneça um score de sentimento associado, com precisão de até 5 casas decimais, seguindo as regras abaixo:
 
-    O score pode ter até 5 casas decimais para aumentar a precisão da análise.
+    - 0.50000 a 1: very positive
+    - 0.10000 a 0.50000: positive
+    - -0.10000 a 0.10000: neutral
+    - -0.10000 a -0.50000: negative
+    - -0.50000 a -1: very negative
+
+    Garanta que o score fornecido tenha exatamente 5 casas decimais para aumentar a precisão da análise.
 
     Entrada:
-    Text: Eu acho que a comida foi boa
+    Texto: Eu acho que a comida foi boa
 
-    output:
+    Saída esperada:
     {
         "sentiment": "positive",
-        "sentiment_score": 0.6234
+        "sentiment_score": 0.0000
     }
+
     """
 
     with open("data/influencers_parsed_final.json", "r", encoding="utf-8") as file:
@@ -87,6 +88,7 @@ def main():
                 sentiment=resp_dict["raw"]["sentiment"],
                 sentiment_score=resp_dict["raw"]["sentiment_score"],
             )
+            print(resp_dict["raw"]["sentiment"], resp_dict["raw"]["sentiment_score"])
             influencers_enriched.append(influencer.model_dump())
         except Exception as e:
             print("Error processing influencer {}. Error. {}".format(d["id"], e))
@@ -95,7 +97,7 @@ def main():
         print("processed")
 
     # save the enriched influencers
-    with open("data/influencers_enriched2.json", "w", encoding="utf-8") as file:
+    with open("data/influencers_enriched_gpt3.5.json", "w", encoding="utf-8") as file:
         json.dump(influencers_enriched, file, ensure_ascii=False, indent=2)
 
 
