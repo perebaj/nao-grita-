@@ -18,6 +18,8 @@ pydantic = "^2.10.6"
 scikit-learn = "^1.6.1"
 transformers = "^4.48.1"
 torch = "^2.5.1"
+thefuzz = "^0.22.1"
+pylint = "^3.3.3"
 
 
 [build-system]

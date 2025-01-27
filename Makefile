@@ -13,6 +13,7 @@ fmt:
 lint:
 	poetry run flake8 .
 	poetry run mypy --ignore-missing-imports .
+	poetry run pylint --rcfile=.pylintrc .
 
 ## Display help for all targets
 .PHONY: help

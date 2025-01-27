@@ -2,22 +2,36 @@ import json
 
 import pandas as pd
 import torch
+from thefuzz import fuzz
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 # Load the tokenizer and model
 # Model reference: https://huggingface.co/cardiffnlp/twitter-xlm-roberta-base-sentiment
-model_name = "cardiffnlp/xlm-roberta-base-tweet-sentiment-pt"
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-model = AutoModelForSequenceClassification.from_pretrained(model_name)
+MODEL_NAME = "cardiffnlp/xlm-roberta-base-tweet-sentiment-pt"
+tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+model = AutoModelForSequenceClassification.from_pretrained(MODEL_NAME)
 
 
 def sentiment_analysis(text: str) -> dict:
+    """
+    Perform sentiment analysis on the given text.
+
+    Args:
+        text (str): The input text to analyze.
+
+    Returns:
+        dict: A dictionary containing the sentiment and sentiment score.
+
+    Example:
+        >>> sentiment_analysis("I love this product!")
+        {'sentiment': 'positive', 'sentiment_score': 0.98765}
+    """
+
     # Tokenize the text
     inputs = tokenizer(text, return_tensors="pt", truncation=True, padding=True)
 
     # Get model predictions
     outputs = model(**inputs)
-    print(outputs)
     logits = outputs.logits
 
     # Convert logits to probabilities
@@ -52,6 +66,22 @@ def call_sentiment_analysis():
 
 
 def calculate_final_rating(data: dict):
+    """
+    Calculates the final rating based on the given data.
+
+    Args:
+        data (dict): A dictionary containing the following keys:
+            - rate (float): The rating value.
+            - sentiment_score (float): The sentiment score.
+            - sentiment (str): The sentiment category (positive, neutral, negative).
+
+    Returns:
+        None
+
+    Modifies:
+        Adds the 'final_rating' key to the 'data' dictionary with the calculated final rating value.
+
+    """
     w_rate = 0.6
     w_sentiment = 0.4
 
@@ -79,6 +109,18 @@ def call_calculate_final_rating():
 
 
 def rank():
+    """
+    Ranks influencers based on their final rating, sentiment score, and rate.
+
+    Reads data from a JSON file, creates a DataFrame, and sorts it based on the specified columns.
+    Adds a ranking column to the DataFrame and displays the top 30 ranked influencers.
+
+    Parameters:
+        None
+
+    Returns:
+        None
+    """
     with open("data/influencers_enriched_robertasentiment_ptbr2.json", "r", encoding="utf-8") as file:
         data = json.load(file)
 
@@ -94,7 +136,42 @@ def rank():
     df["rank"] = df.index + 1
 
     # Display the ranked DataFrame
-    print(df[["rank", "id", "nickname", "final_rating", "sentiment_score", "rate"]][:15])
+    print(df[["rank", "id", "nickname", "final_rating", "sentiment_score", "rate"]][:30])
 
 
-rank()
+def fuzz_analysis():
+    """
+    Perform fuzzy matching analysis on influencers' data.
+
+    This function reads data from a JSON file, performs fuzzy matching on the influencers' nicknames and names,
+    and saves the matched pairs to another JSON file.
+
+    Returns:
+        None
+    """
+    with open("data/influencers_enriched_robertasentiment_ptbr2.json", "r", encoding="utf-8") as file:
+        data = json.load(file)
+    agrupated_elements = {}
+    all_matches = []
+    for k, v in enumerate(data):
+        if v["id"] in agrupated_elements:
+            continue
+        match_ele = []
+        for k2, v2 in enumerate(data):
+            if v2["id"] in agrupated_elements:
+                continue
+            if k != k2:
+                score = fuzz.partial_ratio(v["nickname"] + v["name"], v2["nickname"] + v2["name"])
+                if score > 80:
+                    print(f"{v['nickname']} + {v['name']} - {v2['nickname']} + {v2['name']} - {score}")
+                    agrupated_elements[v["id"]] = True
+                    agrupated_elements[v2["id"]] = True
+                    match_ele.append(v["id"])
+                    match_ele.append(v2["id"])
+        if len(match_ele) > 0:
+            # print(match_ele)
+            all_matches.append(match_ele)
+
+    # save all matches to a file
+    with open("data/influencers_matches.json", "w", encoding="utf-8") as file:
+        json.dump(all_matches, file, ensure_ascii=False, indent=4)
