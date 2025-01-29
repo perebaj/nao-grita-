@@ -144,37 +144,6 @@ def call_calculate_final_rating():
         json.dump(data, file, ensure_ascii=False, indent=4)
 
 
-def rank():
-    """
-    Ranks influencers based on their final rating, sentiment score, and rate.
-
-    Reads data from a JSON file, creates a DataFrame, and sorts it based on the specified columns.
-    Adds a ranking column to the DataFrame and displays the top 30 ranked influencers.
-
-    Parameters:
-        None
-
-    Returns:
-        None
-    """
-    with open("data/influencers_enriched_robertasentiment_ptbr2.json", "r", encoding="utf-8") as file:
-        data = json.load(file)
-
-    # Create a DataFrame
-    df = pd.DataFrame(data)
-
-    # Sort by final_rating (descending), sentiment_score (descending), and rate (descending)
-    df = df.sort_values(by=["final_rating", "sentiment_score", "rate"], ascending=[False, False, False]).reset_index(
-        drop=True
-    )
-
-    # Add a ranking column
-    df["rank"] = df.index + 1
-
-    # Display the ranked DataFrame
-    print(df[["rank", "id", "nickname", "final_rating", "sentiment_score", "rate"]][:30])
-
-
 def fuzz_analysis():
     """
     Perform fuzzy matching analysis on influencers' data.
@@ -240,4 +209,39 @@ def group_reviews():
         json.dump(all_reviews, file, ensure_ascii=False, indent=4)
 
 
-group_reviews()
+def rank_influencer():
+    with open("data/influencers_grouped_reviews2.json", "r", encoding="utf-8") as file:
+        data = json.load(file)
+
+    influencers_analysis = []
+    for influencer_reviews in data:
+        uid = influencer_reviews["uuid"]
+        final_rating = influencer_reviews["final_rating"]
+
+        print(f"UUID: {uid} - Final Rating: {final_rating}")
+
+        influencer_reviews_df = pd.DataFrame(influencer_reviews["reviews"])
+        #arbitrarily select the last review to get the nickname
+        last_review = influencer_reviews_df.iloc[-1]
+
+        influencers_analysis.append(
+            {
+                "uuid": uid,
+                "final_rating": final_rating,
+                "reviews": influencer_reviews["reviews"],
+                "nickname": last_review["nickname"],
+                "name": last_review["name"],
+                "num_reviews": len(influencer_reviews_df),
+                "num_negative": len(influencer_reviews_df[influencer_reviews_df["sentiment"] == "negative"]),
+                "num_neutral": len(influencer_reviews_df[influencer_reviews_df["sentiment"] == "neutral"]),
+                "num_positive": len(influencer_reviews_df[influencer_reviews_df["sentiment"] == "positive"]),
+                "avg_rate": influencer_reviews_df["rate"].mean(),
+            }
+        )
+
+    # save the results to a file
+    with open("data/influencers_ranked2.json", "w", encoding="utf-8") as file:
+        json.dump(influencers_analysis, file, ensure_ascii=False, indent=4)
+
+
+rank_influencer()
