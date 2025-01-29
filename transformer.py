@@ -205,12 +205,21 @@ def group_reviews():
         print(reviews)
         all_reviews.append(reviews)
 
-    with open("data/influencers_grouped_reviews2.json", "w", encoding="utf-8") as file:
+    # find the reviews that were not grouped
+    for influencer in influencers:
+        if influencer["id"] not in [review for match in matches for review in match]:
+            uid = str(uuid.uuid4())
+            reviews = {"uuid": uid, "reviews": [influencer]}
+            final_rating = calculate_influencer_rating(reviews["reviews"])
+            reviews["final_rating"] = final_rating
+            all_reviews.append(reviews)
+
+    with open("data/influencers_grouped_reviews3.json", "w", encoding="utf-8") as file:
         json.dump(all_reviews, file, ensure_ascii=False, indent=4)
 
 
 def rank_influencer():
-    with open("data/influencers_grouped_reviews2.json", "r", encoding="utf-8") as file:
+    with open("data/influencers_grouped_reviews3.json", "r", encoding="utf-8") as file:
         data = json.load(file)
 
     influencers_analysis = []
@@ -240,7 +249,7 @@ def rank_influencer():
         )
 
     # save the results to a file
-    with open("data/influencers_ranked2.json", "w", encoding="utf-8") as file:
+    with open("data/influencers_ranked3.json", "w", encoding="utf-8") as file:
         json.dump(influencers_analysis, file, ensure_ascii=False, indent=4)
 
 
