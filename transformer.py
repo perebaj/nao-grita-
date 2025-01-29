@@ -1,4 +1,7 @@
+import datetime
 import json
+import random
+import uuid
 
 import pandas as pd
 import torch
@@ -65,46 +68,79 @@ def call_sentiment_analysis():
         json.dump(influencers, file, ensure_ascii=False, indent=4)
 
 
-def calculate_final_rating(data: dict):
+def calculate_influencer_rating(reviews):
     """
-    Calculates the final rating based on the given data.
+    Calcula o rating final do influenciador baseado em avaliações, sentimento e scores.
 
     Args:
-        data (dict): A dictionary containing the following keys:
-            - rate (float): The rating value.
-            - sentiment_score (float): The sentiment score.
-            - sentiment (str): The sentiment category (positive, neutral, negative).
+        reviews: Lista de dicionários contendo as avaliações
 
     Returns:
-        None
-
-    Modifies:
-        Adds the 'final_rating' key to the 'data' dictionary with the calculated final rating value.
-
+        float: Rating final na escala 0-5
     """
-    w_rate = 0.6
-    w_sentiment = 0.4
+    if not reviews:
+        return 0.0
 
-    # normalize rate
-    rate_normalize = data["rate"] / 10.0
-    sentiment_multiplier = {"positive": 1.0, "neutral": 0.5, "negative": 0.2}
+    def normalize_sentiment_score(sentiment, score):
+        # Inverte o score para sentimentos negativos
+        if sentiment == "negative":
+            return 1 - score
+        elif sentiment == "neutral":
+            return 0.5
+        else:  # positive
+            return score
 
-    adjusted_sentiment_score = data["sentiment_score"] * sentiment_multiplier[data["sentiment"]]
+    total_weight = 0
+    weighted_sum = 0
 
-    final_rating = w_rate * rate_normalize + w_sentiment * adjusted_sentiment_score
+    for review in reviews:
+        # Normaliza o rate original para escala 0-1
+        normalized_rate = review["rate"] / 10.0
 
-    data["final_rating"] = round(final_rating, 5)
+        # Calcula o score de sentimento normalizado
+        sentiment_normalized = normalize_sentiment_score(review["sentiment"], review["sentiment_score"])
+
+        # Peso baseado na confiança do modelo de sentimento
+        weight = review["sentiment_score"]
+
+        # Combina rate e sentimento com pesos iguais
+        review_score = (normalized_rate + sentiment_normalized) / 2
+
+        weighted_sum += review_score * weight
+        total_weight += weight
+
+    # Calcula média ponderada final
+    final_score = weighted_sum / total_weight if total_weight > 0 else 0
+
+    # Converte para escala 0-5
+    return round(final_score * 5, 2)
 
 
 def call_calculate_final_rating():
+    """
+    Calls the calculate_influencer_rating function for each influencer in the data.
+    Saves the results to a file.
+
+    Parameters:
+    None
+
+    Returns:
+    None
+    """
     with open("data/influencers_enriched_robertasentiment_ptbr.json", "r", encoding="utf-8") as file:
         data = json.load(file)
 
-    for influencer in data:
-        calculate_final_rating(influencer)
+    calculate_influencer_rating(data)
 
     # save the results to a file
+
     with open("data/influencers_enriched_robertasentiment_ptbr2.json", "w", encoding="utf-8") as file:
+        current_datetime = datetime.datetime.now()
+        random_number = random.randint(1000, 9999)
+        file_name = f"data/influencers_enriched_robertasentiment_ptbr2_{current_datetime.strftime('%Y%m%d%H%M%S')}_{random_number}.json"
+
+    # Save the results to the generated file name
+    with open(file_name, "w", encoding="utf-8") as file:
         json.dump(data, file, ensure_ascii=False, indent=4)
 
 
@@ -175,3 +211,33 @@ def fuzz_analysis():
     # save all matches to a file
     with open("data/influencers_matches.json", "w", encoding="utf-8") as file:
         json.dump(all_matches, file, ensure_ascii=False, indent=4)
+
+
+def group_reviews():
+    with open("data/influencers_matches.json", "r", encoding="utf-8") as file:
+        matches = json.load(file)
+
+    with open("data/influencers_enriched_robertasentiment_ptbr.json", "r", encoding="utf-8") as file:
+        influencers = json.load(file)
+
+    all_reviews = []
+    for match in matches:
+        reviews = []
+        for id in match:
+            for influencer in influencers:
+                if influencer["id"] == id:
+                    reviews.append(influencer)
+                    break
+        # create a new dictionary with the grouped reviews and assign a uuid to it
+        uid = str(uuid.uuid4())
+        reviews = {"uuid": uid, "reviews": reviews}
+        final_rating = calculate_influencer_rating(reviews["reviews"])
+        reviews["final_rating"] = final_rating
+        print(reviews)
+        all_reviews.append(reviews)
+
+    with open("data/influencers_grouped_reviews2.json", "w", encoding="utf-8") as file:
+        json.dump(all_reviews, file, ensure_ascii=False, indent=4)
+
+
+group_reviews()
